@@ -11,8 +11,9 @@ params:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-require(mosaic)
-require(rethinking)
+library(dplyr)
+library(ggformula)
+library(rethinking)
 
 knitr::opts_template$set(
   original = list(eval = params$original, include = params$original),
@@ -47,7 +48,6 @@ ways / sum(ways)
 
 ## R code 2.2
 
-```{r, chunk2.1}
 ```{r, chunk2.2}
 dbinom(6, size = 9, prob = 0.5)
 ```
@@ -104,27 +104,24 @@ mtext("20 points")
 
 
 ```{r, chunk2.4a, opts.label = "updated"}
-xyplot(posterior ~ p, data = Water9,
-     type = "b",
-     xlab = "probability of water",
-     ylab = "posterior probability",
-     main = "20 points")
+gf_point(posterior ~ p, data = Water9) %>%
+  gf_line() %>%
+  gf_labs(x = "probability of water", 
+          y = "posterior probability", 
+          title = "20 points")
 ```
 
 ```{r, chunk2.4b, opts.label = "updated"}
-xyplot(prior + likelihood + posterior ~ p, data = Water9, type = "b", 
-     auto.key = list(points = TRUE, lines = TRUE),
-     xlab = "probability of water",
-     ylab = "posterior probability",
-     main = "20-point grid")
-ggplot(Water9, aes(x = p)) +
-  geom_line(aes(y = prior, color = "prior")) +
-  geom_line(aes(y = likelihood, color = "likelihood")) +
-  geom_line(aes(y = posterior, color = "posterior")) +
-  geom_point(aes(y = prior, color = "prior")) +
-  geom_point(aes(y = likelihood, color = "likelihood")) +
-  geom_point(aes(y = posterior, color = "posterior")) +
-  labs(title = "20-point grid") 
+Water9 %>%
+  gf_point(posterior ~ p, color = ~"posterior") %>%
+  gf_line(posterior ~ p, color = ~"posterior") %>%
+  gf_point(prior ~ p, color = ~"prior") %>%
+  gf_line(prior ~ p, color = ~"prior") %>%
+  gf_point(likelihood ~ p, color = ~"likelihood") %>%
+  gf_line(likelihood ~ p, color = ~"likelihood") %>%
+  gf_labs(x = "probability of water", 
+          y = "posterior probability", 
+          title = "20-point grid")
 ```
 
 ## R code 2.5
@@ -160,6 +157,7 @@ Water9b <-
   )  
 ```
 
+
 ## R code 2.6
 
 ```{r, chunk2.6}
@@ -188,7 +186,13 @@ curve(dnorm(x, 0.67, 0.16), lty = 2, add = TRUE)
 # analytical calculation
 w <- 6
 n <- 9
-plotDist("beta", params = list(shape1 = w + 1, shape2 = n - w + 1))
-# quadratic approximation
-plotDist("norm", mean = 0.67, sd = 0.16, add = TRUE, col = 2, lty = 2)
+analytic <- gf_function(fun = dbeta, 
+            args = list(shape1 = w + 1, shape2 = n - w + 1), 
+            xlim = c(0, 1))
+# add the quadratic approximation
+analytic %>%
+  gf_function(fun = dnorm, 
+              args = list(mean = 0.67, sd = 0.16), 
+              xlim = c(0, 1),
+              linetype = 2)
 ```
